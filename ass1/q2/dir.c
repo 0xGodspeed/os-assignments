@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <ftw.h>
 
 #define RED "\x1B[31m"
 #define GRN "\x1B[32m"
@@ -13,21 +16,25 @@
 #define WHT "\x1B[37m"
 #define RESET "\x1B[0m"
 
-#define IF_VERBOSE if (verbose)
-
-void dir(char * dir, bool removeDir, bool verbose) {
+void makeDir(char * dir, bool removeDir, bool verbose) {
     if (removeDir) {
-        int rc = remove(dir);
+        int rc = rmdir(dir);
+        printf("%d\n", removeDir);
+        printf("%d\n", rc);
         if (rc == 1 && verbose) {
             printf("removed %s", dir);
         }
     }
-    int mkdir_rc = mkdir(dir, 770);
+
+    int mkdir_rc = mkdir(dir, 0770);
     if (mkdir_rc == 0 && verbose) {
-        printf("created %s", dir);
+        printf(CYN "[-] Created %s" RESET, dir);
     }
     else if (mkdir_rc != 0) {
-        printf(RED"[X] ERROR:" RESET "failed to create %s", dir);
+        printf(RED"[x] ERROR: " RESET "failed to create %s\n", dir);
+        if (verbose && errno == EEXIST) {
+            printf(RED "[x] ERROR: " RESET "%s already exists", dir);
+        }
     }
 }
 
@@ -36,7 +43,7 @@ int main(int argc, char *argv[]) {
     bool verbose = false;
     char* dir;
     if (argc < 2) {
-        printf(RED "[-] Usage:" RESET " dir [-option] [dir_name]");
+        printf(MAG "[+] Usage:" RESET " dir [-option] [dir_name]");
         return EXIT_FAILURE;
     }
     for (int i = 1; i < argc; i++) {
@@ -50,6 +57,6 @@ int main(int argc, char *argv[]) {
             dir = argv[i];   
         }
     }
-
-
+    makeDir(dir, remove, verbose);
+    return EXIT_SUCCESS;
 }
