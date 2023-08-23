@@ -1,0 +1,2 @@
+1 2 xor
+2 3 product

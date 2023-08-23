@@ -1,0 +1,2 @@
+1 2 xor = 3
+2 3 product = 6
