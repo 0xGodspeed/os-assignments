@@ -1,5 +1,8 @@
+#define _XOPEN_SOURCE 500
+
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,19 +19,22 @@
 #define WHT "\x1B[37m"
 #define RESET "\x1B[0m"
 
+void rmrf(char* path, const struct stat* stat, int type, struct FTW* ftw, bool verbose) {
+    remove(path);
+}
+
 void makeDir(char * dir, bool removeDir, bool verbose) {
     if (removeDir) {
-        int rc = rmdir(dir);
-        printf("%d\n", removeDir);
-        printf("%d\n", rc);
-        if (rc == 1 && verbose) {
-            printf("removed %s", dir);
+        int rc = nftw(dir, rmrf, 64, FTW_DEPTH | FTW_PHYS);
+
+        if (rc == 0 && verbose) {
+            printf(CYN "[-] Removed %s\n" RESET, dir);
         }
     }
 
     int mkdir_rc = mkdir(dir, 0770);
     if (mkdir_rc == 0 && verbose) {
-        printf(CYN "[-] Created %s" RESET, dir);
+        printf(CYN "[-] Created %s\n" RESET, dir);
     }
     else if (mkdir_rc != 0) {
         printf(RED"[x] ERROR: " RESET "failed to create %s\n", dir);
