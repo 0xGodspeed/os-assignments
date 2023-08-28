@@ -38,10 +38,12 @@ void makeDir(char * dir, bool removeDir, bool verbose) {
     }
     else if (mkdir_rc != 0) {
         printf(RED"[x] ERROR: " RESET "failed to create %s\n", dir);
+        printf(RED"[x] ERROR: " RESET "errno: %d\n", errno);
         if (verbose && errno == EEXIST) {
             printf(RED "[x] ERROR: " RESET "%s already exists", dir);
         }
     }
+    
 }
 
 int main(int argc, char *argv[]) {

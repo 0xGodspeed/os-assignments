@@ -1,20 +1,4 @@
-#include <stdbool.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
-#include <time.h>
-
-#define RED "\x1B[31m"
-#define GRN "\x1B[32m"
-#define YEL "\x1B[33m"
-#define BLU "\x1B[34m"
-#define MAG "\x1B[35m"
-#define CYN "\x1B[36m"
-#define WHT "\x1B[37m"
-#define RESET "\x1B[0m"
-
-#define IF_VERBOSE if (newline_bool)
+#include "word.h"
 
 void word(char *file, bool newline_bool)
 {
@@ -33,9 +17,10 @@ void word(char *file, bool newline_bool)
     int charr = 0;
     while ((ch = fgetc(ptr)) != EOF)
     {
+        printf("%c\n", ch);
         charr++;
         if (newline_bool)
-        {
+        {  
             if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0')
                 words++;
         }
@@ -95,47 +80,52 @@ void word_cmp(char *file1, char *file2)
     
 }
 
-int main(int argc, char *argv[])
+int wordRun(int argNum, char *args[])
 {
     bool newline_bool = true;
     char *file;
-    if (argc == 2)
+    if (argNum == 2)
     {
-        file = argv[1];
+        file = args[1];
         word(file, newline_bool);
     }
-    else if (argc == 3)
+    else if (argNum == 3)
     {
-        if (strcmp("-n", argv[1]) == 0)
+        if (strcmp("-n", args[1]) == 0)
         {
             newline_bool = false;
-            file = argv[2];
+            file = args[2];
             word(file, newline_bool);
         }
-        if (strcmp("-d", argv[1]) == 0)
+        if (strcmp("-d", args[1]) == 0)
         { 
             printf(RED "[-] Usage:" RESET " word -d [file_name] [file_name2]");
             return EXIT_FAILURE;
         }
     }
-    else if (argc == 4)
+    else if (argNum == 4)
     {
-        if (strcmp("-n", argv[1]) == 0)
+        if (strcmp("-n", args[1]) == 0)
         {
             printf(RED "[-] Usage:" RESET " word -n [file_name]");
         }
-        if (strcmp("-d", argv[1]) == 0)
+        if (strcmp("-d", args[1]) == 0)
         {
-            char *file1 = argv[2];
-            char *file2 = argv[3];
+            char *file1 = args[2];
+            char *file2 = args[3];
             word_cmp(file1, file2);
         }
     }
     else
     {
-        printf(RED "[-] Usage:" RESET " word [-option] [file_name]");
+        printf(WHT "[-] Usage:" RESET " word [-option] [file_name]");
         return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
 }
+
+// int main() {
+//     char * cmd[] = {"./word", "./test1.txt"};
+//     wordRun(2, cmd);
+// }
