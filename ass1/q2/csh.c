@@ -7,6 +7,15 @@
 #include <unistd.h>
 #include <errno.h>
 
+#define RED "\x1B[31m"
+#define GRN "\x1B[32m"
+#define YEL "\x1B[33m"
+#define BLU "\x1B[34m"
+#define MAG "\x1B[35m"
+#define CYN "\x1B[36m"
+#define WHT "\x1B[37m"
+#define RESET "\x1B[0m"
+
 void execute_command(const char* cmd, char* const command[], int argsNum) {
     pid_t pid = fork();
 
@@ -23,7 +32,10 @@ void execute_command(const char* cmd, char* const command[], int argsNum) {
         } else if (strcmp(cmd, "word") == 0) {
             wordRun(argsNum, command);
             // execv(command[0], command);
+        } else {
+            printf(RED "[x] Unsupported command: %s\n" RESET, cmd);
         }
+
 
         // execlp(command, command, (char *)NULL);
         // perror("execlp");
@@ -49,8 +61,10 @@ int main() {
     char input[50];
 
     while (1) {
-        printf("Current directory: %s\n", getcwd(NULL, 0));
-        printf("Enter a command (word, dir, date) or 'exit' to quit: ");
+        // printf("Current directory: %s\n", getcwd(NULL, 0));
+        char* username = getlogin();
+        printf(WHT "[%s:" RESET RED "%s]" RESET WHT "$ " RESET, username, getcwd(NULL, 0));
+        // printf("Enter a command (word, dir, date) or 'exit' to quit: ");
         char* inputArray[50];
         int i = 0;
         fgets(input, sizeof(input), stdin);
