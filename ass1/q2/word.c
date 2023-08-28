@@ -84,7 +84,7 @@ int wordRun(int argNum, char *args[])
 {
     bool newline_bool = true;
     char *file;
-    if (argNum == 2)
+    if (argNum == 2 && !(args[1][0] == '-'))
     {
         file = args[1];
         word(file, newline_bool);
@@ -97,9 +97,14 @@ int wordRun(int argNum, char *args[])
             file = args[2];
             word(file, newline_bool);
         }
-        if (strcmp("-d", args[1]) == 0)
+        else if (strcmp("-d", args[1]) == 0)
         { 
             printf(RED "[-] Usage:" RESET " word -d [file_name] [file_name2]");
+            return EXIT_FAILURE;
+        }
+        else if (args[1][0] == '-')
+        {
+            printf(RED "[-] Unsupported option: %s\n" RESET, args[1]);
             return EXIT_FAILURE;
         }
     }
@@ -109,11 +114,16 @@ int wordRun(int argNum, char *args[])
         {
             printf(RED "[-] Usage:" RESET " word -n [file_name]");
         }
-        if (strcmp("-d", args[1]) == 0)
+        else if (strcmp("-d", args[1]) == 0)
         {
             char *file1 = args[2];
             char *file2 = args[3];
             word_cmp(file1, file2);
+        }
+        else if (args[1][0] == '-')
+        {
+            printf(RED "[-] Unsupported option: %s\n" RESET, args[1]);
+            return EXIT_FAILURE;
         }
     }
     else
