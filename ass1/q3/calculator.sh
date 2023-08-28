@@ -1,9 +1,19 @@
-#!/bin/bash
+#!/bin/sh
+
+if [ ! -e "input.txt" ]; then
+	echo "input file not found"
+	exit
+fi
 
 mkdir -p Result
 touch Result/output.txt
 > Result/output.txt
-while IFS=" " read -r x y operation; do
+while read -r x y operation; do
+	if [[ ! $x || ! $y || ! $operation ]]; then
+		echo "invalid input"
+		exit
+	fi
+
 	case "$operation" in 
 		"xor")
 			result=$((x ^ y))

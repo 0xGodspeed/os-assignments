@@ -9,5 +9,5 @@ int fact(int n) {
 }
 
 int main() {
-    printf("factorial of 4: %d", fact(4));
+    printf("factorial of 4: %d\n", fact(4));
 }

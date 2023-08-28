@@ -18,6 +18,7 @@
 #define RESET "\x1B[0m"
 
 
-void word(char *file, bool newline_bool);
-void word_cmp(char *file1, char *file2);
-int wordRun(int argNum, char *args[]);
+int word(char *file);
+int wordNewline(char *file);
+int word_cmp(char *file1, char *file2);
+int wordRun(int argNum, char* const args[]);

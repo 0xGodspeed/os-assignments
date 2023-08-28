@@ -17,6 +17,7 @@ void fib(int n) {
 }
 
 int main() {
+    printf("fibonacci series upto 16: ");
     fib(16);
     printf("\n");
 }

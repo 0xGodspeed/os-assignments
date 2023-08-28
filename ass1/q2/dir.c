@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
     bool verbose = false;
     char* dir;
     if (argc < 2) {
-        printf(MAG "[+] Usage:" RESET " dir [-option] [dir_name]");
-        return EXIT_FAILURE;
+        printf(WHT "[+] Usage:" RESET " dir [-option] [dir_name]\n");
+        return 1;
     }
     for (int i = 1; i < argc; i++) {
         if (strcmp("-r", argv[i]) == 0) {
@@ -70,5 +70,5 @@ int main(int argc, char *argv[]) {
         }
     }
     makeDir(dir, remove, verbose);
-    return EXIT_SUCCESS;
+    return 0;
 }
