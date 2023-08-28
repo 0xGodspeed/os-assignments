@@ -16,30 +16,44 @@
 
 #define IF_VERBOSE if (STRiNG)
 
-void date(char *file, bool STRiNG, bool rfc, char *thestring)
+void date(char *file1, bool STRiNG, bool rfc, char *thestring)
 {
 
     struct stat filestat;
 
-    if (stat(file, &filestat) != 0)
+    if (stat(file1, &filestat) != 0)
     {
         printf(RED "[-] Error" RESET "File doesnt exist\n");
         return;
     }
     if (STRiNG)
     {
-        struct tm tm_info;
-
-        if (strptime(thestring, "%Y-%m-%d %H:%M:%S", &tm_info) == NULL)
+        struct tm modified_time;
+        char buffer[80];
+        if (strcmp(thestring, "\"yesterday\"") == 0)
         {
-            printf("Invalid date format\n");
-            return;
+            filestat.st_mtime -= 24 * 60 * 60;
+            printf("Updated time: %s",
+                   ctime(&filestat.st_mtime));
         }
-
-        // Print the parsed date and time
-        char formattedTime[100];
-        strftime(formattedTime, sizeof(formattedTime), "%Y-%m-%d %H:%M:%S", &tm_info);
-        printf("Parsed Date and Time: %s\n", formattedTime);
+        if (strcmp(thestring, "\"tomorrow\"") == 0)
+        {
+            filestat.st_mtime += 24 * 60 * 60;
+            printf("Updated time: %s",
+                   ctime(&filestat.st_mtime));
+        }
+        if (strcmp(thestring, "\"1 month ago\"") == 0)
+        {
+            filestat.st_mtime -= 24 * 60 * 60 * 30;
+            printf("Updated time: %s",
+                   ctime(&filestat.st_mtime));
+        }
+        if (strcmp(thestring, "\"2 months ago\"") == 0)
+        {
+            filestat.st_mtime -= 24 * 60 * 60 * 30 * 2;
+            printf("Updated time: %s",
+                   ctime(&filestat.st_mtime));
+        }
     }
     else if (rfc)
     {
@@ -98,3 +112,5 @@ int main(int argc, char *argv[])
     date(file, STRiNG, rfc, thestring);
     return EXIT_SUCCESS;
 }
+
+// date -d "yesterday" test1.txt
