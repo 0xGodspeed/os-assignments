@@ -112,5 +112,3 @@ int main(int argc, char *argv[])
     date(file, STRiNG, rfc, thestring);
     return EXIT_SUCCESS;
 }
-
-// date -d "yesterday" test1.txt
