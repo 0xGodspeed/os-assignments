@@ -34,14 +34,14 @@ void execute_command(const char* cmd, char* const command[], int argsNum) {
         wait(NULL);
         // int argsNum = sizeof(command)/sizeof(command[0]);
         if (strcmp(cmd, "dir") == 0) {
-            printf("%s\n", command[argsNum - 1]);
-            printf("\n%d\n", argsNum);
+            // printf("%s\n", command[argsNum - 1]);
+            // printf("\n%d\n", argsNum);
             if (chdir(command[argsNum - 1]) != 0) {
                 perror("chdir");
             }
             // chdir(command[argsNum - 1]);
         }
-        printf("%d", errno);
+        // printf("%d", errno);
     }
 }
 
@@ -85,7 +85,7 @@ int main() {
         // char* options = strdup(input);
         // char* temp = strchr(options, ' ')+1;
         // options = temp+1;
-        if (strcmp(cmd, "exit") == 0) {
+        if (strcmp(cmd, "exit") == 0 || strcmp(cmd, "quit") == 0) {
             break;
         }
 
@@ -94,7 +94,7 @@ int main() {
         // if (chdir(tokens[tokenCount - 1]) != 0) {
         //     perror("chdir");
         // }
-        chdir("dir1");
+        // chdir("dir1");
         // break;
     }
 
