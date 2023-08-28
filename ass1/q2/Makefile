@@ -1,5 +1,5 @@
-export PATH:=/home/gs/code/clg/os/ass1/q2/bin:$(PATH)
-# export PATH:=$(pwd):$(PATH)
+# export PATH:=/home/gs/code/clg/os/ass1/q2/bin:$(PATH)
+export PATH:=$(PWD)/bin:$(PATH)
 CC=gcc
 all:
 	mkdir -p bin
