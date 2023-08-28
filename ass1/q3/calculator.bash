@@ -12,7 +12,7 @@ while IFS=" " read -r x y operation; do
 			result=$((x * y))
 			;;
 		"compare")
-			result=$(( a > b ? a : b ))
+			result=$(( x > y ? x : y ))
 			;;
 	esac
 	echo "$x $y $operation = $result" >> Result/output.txt
