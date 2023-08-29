@@ -25,35 +25,27 @@ void execute_command(const char* cmd, char* const command[], int argsNum) {
     } else if (pid == 0) {
         // Child process
         if (strcmp(cmd, "dir") == 0) {
-            // execvp("/home/gs/code/clg/os/ass1/dir", command);
             execvp("dir", command);
         } else if (strcmp(cmd, "date") == 0) {
             execvp("date", command);
         } else if (strcmp(cmd, "word") == 0) {
+            // internal
             wordRun(argsNum, command);
-            // execv(command[0], command);
         } else {
             printf(RED "[x] Unsupported command: %s\n" RESET, cmd);
         }
 
-
-        // execlp(command, command, (char *)NULL);
-        // perror("execlp");
+        // perror("execvp");
         exit(errno);
     } else {
         // Parent process
         int status;
         wait(NULL);
-        // int argsNum = sizeof(command)/sizeof(command[0]);
         if (strcmp(cmd, "dir") == 0) {
-            // printf("%s\n", command[argsNum - 1]);
-            // printf("\n%d\n", argsNum);
             if (chdir(command[argsNum - 1]) != 0) {
                 perror("chdir");
             }
-            // chdir(command[argsNum - 1]);
         }
-        // printf("%d", errno);
     }
 }
 
@@ -61,28 +53,23 @@ int main() {
     char input[50];
 
     while (1) {
-        // printf("Current directory: %s\n", getcwd(NULL, 0));
         char* username = getlogin();
-        printf(WHT "[%s:" RESET RED "%s]" RESET WHT "$ " RESET, username, getcwd(NULL, 0));
-        // printf("Enter a command (word, dir, date) or 'exit' to quit: ");
+        printf(WHT "[%s:" RESET RED "%s" RESET WHT "]$ " RESET, username, getcwd(NULL, 0));
         char* inputArray[50];
         int i = 0;
         fgets(input, sizeof(input), stdin);
+
+        // for empty inputs
+        if (strlen(input) == 1 && input[0] == '\n') {
+            continue;
+        }
+
         input[strcspn(input, "\n")] = '\0';
 
-        // char* inputDup = strdup(input);
-        // char* cmd;
-        // // cmd is the first word
-        // cmd = strtok(inputDup, " ");
-        // char* options = input;
-        // while (*options != '\n' && *(options++) != ' ') {
-        // }
-
-        char* tokens[20];  // Assuming a maximum of 20 tokens
+        char* tokens[20];  // 20 tokens max
         int tokenCount = 0;
 
-        char* token =
-            strtok(input, " ");  // Split input using space as delimiter
+        char* token = strtok(input, " ");  
 
         while (token != NULL) {
             tokens[tokenCount] = token;
@@ -95,21 +82,12 @@ int main() {
         // for (int i = 0; i < tokenCount; i++) {
         //     printf("Token %d: %s\n", i + 1, tokens[i]);
         // }
-
-        // char* options = strdup(input);
-        // char* temp = strchr(options, ' ')+1;
-        // options = temp+1;
         if (strcmp(cmd, "exit") == 0 || strcmp(cmd, "quit") == 0) {
             break;
         }
 
         tokens[tokenCount] = NULL;
         execute_command(cmd, tokens, tokenCount);
-        // if (chdir(tokens[tokenCount - 1]) != 0) {
-        //     perror("chdir");
-        // }
-        // chdir("dir1");
-        // break;
     }
 
     return 0;
