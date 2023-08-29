@@ -20,7 +20,6 @@ int wordNewline(char *file) {
         words++;
     }
     return words;
-    // printf("numWord: %d\n", numWord);
 }
 
 int word(char *file) {
@@ -65,15 +64,7 @@ int word_cmp(char *file1, char *file2) {
     int words = word(file1);
     int words2 = word(file2);
 
-    // while ((ch = fgetc(ptr)) != EOF) {
-    //     if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0') words++;
-    // }
-    // while ((ch = fgetc(ptr2)) != EOF) {
-    //     if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0') words2++;
-    // }
-
     return abs(words - words2);
-    // printf("Differnce of words: %d\n", abs(words - words2));
 }
 
 int wordRun(int argNum, char *const args[]) {
@@ -111,8 +102,3 @@ int wordRun(int argNum, char *const args[]) {
 
     return 0;
 }
-
-// int main() {
-//     char *cmd[] = {"./word", "-n", "./input.txt"};
-//     wordRun(3, cmd);
-// }
