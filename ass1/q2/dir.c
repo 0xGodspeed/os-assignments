@@ -62,8 +62,13 @@ int main(int argc, char *argv[]) {
         if (strcmp("-r", argv[i]) == 0) {
             remove = true;
         }
-        if (strcmp("-v", argv[i]) == 0) {
+        else if (strcmp("-v", argv[i]) == 0) {
             verbose = true;
+        }
+        else if (argv[i][0] == '-')
+        {
+            printf(RED "[-] Unsupported option: %s\n" RESET, argv[i]);
+            return EXIT_FAILURE;
         }
         else {
             dir = argv[i];   
