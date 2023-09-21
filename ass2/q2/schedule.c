@@ -8,41 +8,6 @@
 #include <time.h>
 #include <unistd.h>
 
-// void setSchedulingPolicy(int pid, int policy, int priority) {
-//     struct sched_param param;
-//     param.sched_priority = priority;
-
-//     if (sched_setscheduler(pid, policy, &param) == -1) {
-//         perror("sched_setscheduler");
-//         exit(EXIT_FAILURE);
-//     }
-// }
-
-// int runChildProcess(const char *filename, int scheduling_policy,
-//                     FILE *output_file) {
-//     int priority;
-//     if (scheduling_policy == SCHED_OTHER) {
-//         priority = 0;
-//     } else {
-//         priority = 50;
-//     }
-
-//     pid_t pid = fork();
-
-//     if (pid == 0) {
-//         // Child process
-//         printf("priority: %d pid: %d scheduling policy: %d\n", priority,
-//         getpid(), scheduling_policy); setSchedulingPolicy(getpid(),
-//         scheduling_policy, priority); execl(filename, filename, NULL);
-//         perror("execl");
-//         exit(EXIT_FAILURE);
-//     } else if (pid < 0) {
-//         perror("fork");
-//         exit(EXIT_FAILURE);
-//     }
-//     return pid;
-//     // Parent process waits for the child and measures execution time
-// }
 
 int main() {
     const int num_processes = 3;
@@ -101,8 +66,8 @@ int main() {
         // waitpid(child_pids[i], &status, 0);
         // struct timespec temp_start;
         int pid, status;
-        // pid = wait(NULL);
-        pid  = waitpid(-1, &status, 0);
+         pid = wait(NULL);
+        /* pid  = waitpid(-1, &status, 0); */
         printf("%d\n", pid);
         // waitpid(pid, &status, 0);
         // Write execution time to the output file
