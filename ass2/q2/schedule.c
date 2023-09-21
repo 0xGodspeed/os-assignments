@@ -34,6 +34,10 @@ int main() {
 
         clock_gettime(CLOCK_REALTIME, &times[i][0]);
         pid = fork();
+		if (pid < 0) {
+			perror("fork");
+			exit(EXIT_FAILURE);
+		}
 
         if (pid == 0) {
             // Child process
@@ -61,12 +65,8 @@ int main() {
     }
     // Parent process waits for all child processes to finish
     for (int i = 0; i < num_processes; i++) {
-        // int status;
-
-        // waitpid(child_pids[i], &status, 0);
-        // struct timespec temp_start;
         int pid, status;
-         pid = wait(NULL);
+		pid = wait(NULL);
         /* pid  = waitpid(-1, &status, 0); */
         printf("%d\n", pid);
         // waitpid(pid, &status, 0);
@@ -79,17 +79,10 @@ int main() {
         }
     }
     for (int j = 0; j < 3; j++) {
-        // struct timespec elapsed_time = {
-        //     (times[j][1].tv_sec - times[j][0].tv_sec),
-        //     (times[j][1].tv_nsec - times[j][0].tv_nsec)};
 
         long long elapsed_time =
             (times[j][1].tv_sec - times[j][0].tv_sec) * 1000000000 +
             (times[j][1].tv_nsec - times[j][0].tv_nsec);
-        // if (elapsed_time.tv_nsec < 0) {
-        //     elapsed_time.tv_sec -= 1;
-        //     elapsed_time.tv_nsec += 1000000000;
-        // }
         fprintf(output_file,
                 "Process %d (Policy %d) executed in %lld nanoseconds\n",
                 child_pids[j], j, elapsed_time);
