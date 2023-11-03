@@ -23,6 +23,7 @@ this macro to make the output of all system same and conduct a fair evaluation.
 #define PAGE_SIZE 4096
 #define HOLE 0
 #define PROCESS 1
+#define SIZE_MAX 100
 
 struct main_node {
     int num_of_pages;
@@ -167,7 +168,7 @@ void* mems_malloc(size_t size) {
                     new_sub_node->size = current_sub_node->size - (int)size;
                     new_sub_node->p_addr = (void*)(current_sub_node->p_addr + size);
                     new_sub_node->v_addr_start = (void*)(current_sub_node->v_addr_start + size);
-                    new_sub_node->v_addr_end = current_sub_node->v_addr_end;
+                    new_sub_node->v_addr_end = current_sub_node->v_addr_end - 1;
                     new_sub_node->next = current_sub_node->next;
                     new_sub_node->prev = current_sub_node;
                     if (current_sub_node->next != NULL) {
@@ -176,7 +177,7 @@ void* mems_malloc(size_t size) {
                     current_sub_node->next = new_sub_node;
                     current_sub_node->size = (int)size;
                     current_sub_node->v_addr_end =
-                        (void*)(current_sub_node->v_addr_start + size);
+                        (void*)(current_sub_node->v_addr_start + size - 1); 
                 }
                 // if size is equal to required, no need to make new hole
                 current_sub_node->type = PROCESS;
@@ -202,7 +203,7 @@ void* mems_malloc(size_t size) {
     new_main_node->num_of_pages = num_of_pages;
     new_main_node->v_addr_start = current_main_node->v_addr_end;
     // void* temp = current_main_node->v_addr_end + size;
-    new_main_node->v_addr_end = current_main_node->v_addr_end + num_of_pages * PAGE_SIZE;
+    new_main_node->v_addr_end = current_main_node->v_addr_end + (num_of_pages * PAGE_SIZE) - 1;
     new_main_node->next = head_main;
     new_main_node->prev = current_main_node;
     current_main_node->next = new_main_node;
@@ -220,7 +221,7 @@ void* mems_malloc(size_t size) {
     new_sub_node->size = (int)size;
     new_sub_node->p_addr = p_addr;
     new_sub_node->v_addr_start = new_main_node->v_addr_start;
-    new_sub_node->v_addr_end = (void*)(new_sub_node->v_addr_start + size);
+    new_sub_node->v_addr_end = (void*)(new_sub_node->v_addr_start + size - 1);
     new_sub_node->next = current_main_node->sub_head;
     new_sub_node->prev = new_sub_node;
 
@@ -228,13 +229,12 @@ void* mems_malloc(size_t size) {
     if (size != num_of_pages * PAGE_SIZE) {
         // make remaining HOLE sub_node
         struct sub_node* new_sub_node_hole = add_sub_node();
-        // struct sub_node* new_sub_node_hole =
-            // (struct sub_node*)malloc(sizeof(struct sub_node));
+        // struct sub_node* new_sub_node_hole = (struct sub_node*)malloc(sizeof(struct sub_node));
         new_sub_node_hole->type = HOLE;
         new_sub_node_hole->size = num_of_pages * PAGE_SIZE - (int)size;
         new_sub_node_hole->p_addr = (void*)(p_addr + size);
         new_sub_node_hole->v_addr_start = (void*)(new_sub_node->v_addr_start + size);
-        new_sub_node_hole->v_addr_end = (void*)(new_sub_node_hole->v_addr_start + new_sub_node_hole->size);
+        new_sub_node_hole->v_addr_end = (void*)(new_sub_node_hole->v_addr_start + new_sub_node_hole->size - 1);
         new_sub_node_hole->next = NULL;
         new_sub_node_hole->prev = new_sub_node;
         new_sub_node->next = new_sub_node_hole;
@@ -253,18 +253,63 @@ used.
 (PROCESS or HOLE) in the sub-chain. Parameter: Nothing Returns: Nothing but
 should print the necessary information on STDOUT
 */
-void mems_print_stats() {}
+void mems_print_stats() {
+    struct main_node* current_main_node = head_main->next;
+    int total_used_pages = 0;
+    int total_unused_size = 0;
+    int main_chain_length = 0;
+    int sub_chain_lengths[SIZE_MAX];
+    while (current_main_node != head_main) {
+        printf("MAIN[%d:%d]-> ", current_main_node->v_addr_start, current_main_node->v_addr_end);
+        main_chain_length += 1;
+        struct sub_node* current_sub_node = current_main_node->sub_head;
+        int main_node_pages = current_main_node->num_of_pages;
+        while (current_sub_node != NULL) {
+            if (current_sub_node->type == HOLE) {
+                printf("H[%d:%d] <-> ", current_sub_node->v_addr_start, current_sub_node->v_addr_end);
+                total_unused_size += current_sub_node->size;
+            } else {
+                printf("P[%d:%d] <->", current_sub_node->v_addr_start, current_sub_node->v_addr_end);
+                total_used_pages += 1;
+            }
+            current_sub_node = current_sub_node->next;
+        }
+        current_main_node = current_main_node->next;
+        printf("NULL\n");
+    }
+    printf("Total used pages: %d\n", total_used_pages);
+    printf("Total unused size: %d\n", total_unused_size);
+    printf("Main chain length: %d\n", main_chain_length);
+}
 
 /*
 Returns the MeMS physical p_addr mapped to ptr ( ptr is MeMS virtual p_addr).
 Parameter: MeMS Virtual p_addr (that is created by MeMS)
 Returns: MeMS physical p_addr mapped to the passed ptr (MeMS virtual p_addr).
 */
-void* mems_get(void* v_ptr) {}
+void* mems_get(void* v_ptr) {
+    // traverse through the free list
+    struct main_node* current_main_node = head_main->next;
+    while (current_main_node != head_main) {
+        struct sub_node* current_sub_node = current_main_node->sub_head;
+        while (current_sub_node != NULL) {
+            // if the v_ptr is in the sub_node
+            if (v_ptr >= current_sub_node->v_addr_start &&
+                v_ptr < current_sub_node->v_addr_end && current_sub_node->type == PROCESS) {
+                return current_sub_node->p_addr + (v_ptr - current_sub_node->v_addr_start);
+            }
+            current_sub_node = current_sub_node->next;
+        }
+        current_main_node = current_main_node->next;
+    }
+    return 0; // if no such process found
+}
 
 /*
 this function free up the memory pointed by our virtual_address and add it to
 the free list Parameter: MeMS Virtual p_addr (that is created by MeMS) Returns:
 nothing
 */
-void mems_free(void* v_ptr) {}
+void mems_free(void* v_ptr) {
+
+}
