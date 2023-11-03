@@ -250,7 +250,7 @@ void* mems_malloc(size_t size) {
     new_sub_node->p_addr = p_addr;
     new_sub_node->v_addr_start = new_main_node->v_addr_start;
     new_sub_node->v_addr_end = (void*)(new_sub_node->v_addr_start + size - 1);
-    new_sub_node->next = current_main_node->sub_head;
+    new_sub_node->next = new_main_node->sub_head;
     new_sub_node->prev = new_sub_node;
 
     // to handle edge case when size is exactly the size of the page
@@ -288,6 +288,7 @@ void mems_print_stats() {
     int main_chain_length = 0;
     int sub_chain_lengths[MAX_SIZE];
     while (current_main_node != head_main) {
+        total_used_pages += current_main_node->num_of_pages;
         int sub_chain_length = 0; 
         printf("MAIN[%lu:%lu]-> ", (uintptr_t)current_main_node->v_addr_start, (uintptr_t)current_main_node->v_addr_end);
         main_chain_length += 1;
@@ -300,7 +301,6 @@ void mems_print_stats() {
                 total_unused_size += current_sub_node->size;
             } else {
                 printf("P[%lu:%lu] <-> ", (uintptr_t)current_sub_node->v_addr_start, (uintptr_t)current_sub_node->v_addr_end);
-                total_used_pages += 1;
             }
             current_sub_node = current_sub_node->next;
         }
