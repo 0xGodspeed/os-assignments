@@ -62,6 +62,10 @@ void init_free_list() {
                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     sub_node_tracker = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    main_node_maps[main_node_map_counter] = main_node_tracker;
+    main_node_map_counter += 1;
+    sub_node_maps[sub_node_map_counter] = sub_node_tracker;
+    sub_node_map_counter += 1; 
     current_main_node_map = main_node_tracker;
     current_sub_node_map = sub_node_tracker;
 }
@@ -69,13 +73,10 @@ void init_free_list() {
 struct main_node* add_main_node() {
     // if no more nodes can be added to the current mmap page
     if (main_node_tracker + sizeof(struct main_node) > current_main_node_map + PAGE_SIZE) {
-        current_main_node_map = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
-                                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
-
+        current_main_node_map = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         main_node_maps[main_node_map_counter] = current_main_node_map;
         main_node_map_counter += 1;
-        main_node_tracker = current_main_node_map;
+        main_node_tracker = current_main_node_map + sizeof(struct main_node);
         return (struct main_node*)current_main_node_map;
     // else use the current mmap page
     } else {
@@ -86,13 +87,11 @@ struct main_node* add_main_node() {
 }
 
 struct sub_node* add_sub_node() {
-    if (sub_node_tracker + sizeof(struct sub_node) >
-        current_sub_node_map + PAGE_SIZE) {
-        current_sub_node_map = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
-                                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (sub_node_tracker + sizeof(struct sub_node) > current_sub_node_map + PAGE_SIZE) {
+        current_sub_node_map = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         sub_node_maps[sub_node_map_counter] = current_sub_node_map;
         sub_node_map_counter += 1;
-        sub_node_tracker = current_sub_node_map;
+        sub_node_tracker = current_sub_node_map + sizeof(struct sub_node);
         return (struct sub_node*)current_sub_node_map;
     } else {
         struct sub_node* new_main_node = (struct sub_node*)sub_node_tracker;
@@ -103,15 +102,6 @@ struct sub_node* add_sub_node() {
 
 struct main_node* head_main = NULL;
 void* start_virtual_address = NULL;
-
-// int main() {
-//     main_node_tracker = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
-//                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-//     struct main_node* node1 = add_main_node();
-//     struct main_node* node2 = add_main_node();
-//     node1->num_of_pages = 1;
-//     node2->num_of_pages = 2;
-// }
 
 /*
 Initializes all the required parameters for the MeMS system. The main parameters
@@ -126,7 +116,6 @@ initialized here. Input Parameter: Nothing Returns: Nothing
 void mems_init() {
     init_free_list();
     head_main = add_main_node();
-
     head_main->num_of_pages = 0;
     head_main->next = head_main;
     head_main->prev = head_main;
@@ -146,13 +135,19 @@ void mems_finish() {
     while (current_main_node != head_main) {
         struct main_node* temp = current_main_node;
         current_main_node = current_main_node->next;
+        // unmap the pages allocated to the user
         munmap(temp->p_addr, temp->num_of_pages * PAGE_SIZE);
         struct sub_node* current_sub_node = temp->sub_head;
-        munmap(temp, sizeof(struct main_node));
+        // cant do this as it unmaps all the nodes
+        // munmap(temp, sizeof(struct main_node));
     }
+
+    // unmap main nodes
     for (int i = 0; i < main_node_map_counter; i++) {
         munmap(main_node_maps[i], PAGE_SIZE);
     }
+
+    // unmap sub nodes
     for (int i = 0; i < sub_node_map_counter; i++) {
         munmap(sub_node_maps[i], PAGE_SIZE);
     }
