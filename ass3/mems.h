@@ -332,7 +332,8 @@ void* mems_get(void* v_ptr) {
         }
         current_main_node = current_main_node->next;
     }
-    return 0; // if no such process found
+    printf("No such address found\n");
+    return 0; // if no such address found
 }
 
 /*
@@ -381,7 +382,8 @@ void mems_free(void* v_ptr) {
         struct sub_node* current_sub_node = current_main_node->sub_head;
         while (current_sub_node != NULL) {
             // if the v_ptr is in the sub_node
-            if (v_ptr >= current_sub_node->v_addr_start && v_ptr < current_sub_node->v_addr_end && current_sub_node->type == PROCESS) {
+            // if (v_ptr >= current_sub_node->v_addr_start && v_ptr < current_sub_node->v_addr_end && current_sub_node->type == PROCESS) {
+                if (v_ptr == current_sub_node->v_addr_start && current_sub_node->type == PROCESS) {
                 // make the sub_node HOLE
                 current_sub_node->type = HOLE;
                 // merge the holes
