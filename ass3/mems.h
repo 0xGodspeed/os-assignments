@@ -24,7 +24,7 @@ this macro to make the output of all system same and conduct a fair evaluation.
 #define PAGE_SIZE 4096
 #define HOLE 0
 #define PROCESS 1
-#define MAX_SIZE 1000
+#define MAX_SIZE 100000
 
 struct main_node {
     int num_of_pages;
@@ -62,6 +62,12 @@ void init_free_list() {
                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     sub_node_tracker = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+    if (main_node_tracker == MAP_FAILED || sub_node_tracker == MAP_FAILED) {
+        perror("mmap failed");
+        exit(0);
+    }
+
     main_node_maps[main_node_map_counter] = main_node_tracker;
     main_node_map_counter += 1;
     sub_node_maps[sub_node_map_counter] = sub_node_tracker;
@@ -70,10 +76,17 @@ void init_free_list() {
     current_sub_node_map = sub_node_tracker;
 }
 
+
+
 struct main_node* add_main_node() {
     // if no more nodes can be added to the current mmap page
     if (main_node_tracker + sizeof(struct main_node) > current_main_node_map + PAGE_SIZE) {
         current_main_node_map = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+        if (current_main_node_map == MAP_FAILED) {
+            perror("mmap failed");
+        }
+
         main_node_maps[main_node_map_counter] = current_main_node_map;
         main_node_map_counter += 1;
         main_node_tracker = current_main_node_map + sizeof(struct main_node);
@@ -89,6 +102,11 @@ struct main_node* add_main_node() {
 struct sub_node* add_sub_node() {
     if (sub_node_tracker + sizeof(struct sub_node) > current_sub_node_map + PAGE_SIZE) {
         current_sub_node_map = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+        if (current_sub_node_map == MAP_FAILED) {
+            perror("mmap failed");
+        }
+
         sub_node_maps[sub_node_map_counter] = current_sub_node_map;
         sub_node_map_counter += 1;
         sub_node_tracker = current_sub_node_map + sizeof(struct sub_node);
@@ -136,7 +154,11 @@ void mems_finish() {
         struct main_node* temp = current_main_node;
         current_main_node = current_main_node->next;
         // unmap the pages allocated to the user
-        munmap(temp->p_addr, temp->num_of_pages * PAGE_SIZE);
+        if (munmap(temp->p_addr, temp->num_of_pages * PAGE_SIZE) == -1) {
+            perror("munmap failed");
+            exit(0);
+        }
+
         struct sub_node* current_sub_node = temp->sub_head;
         // cant do this as it unmaps all the nodes
         // munmap(temp, sizeof(struct main_node));
@@ -144,15 +166,29 @@ void mems_finish() {
 
     // unmap main nodes
     for (int i = 0; i < main_node_map_counter; i++) {
-        munmap(main_node_maps[i], PAGE_SIZE);
+        if (munmap(main_node_maps[i], PAGE_SIZE) == -1) {
+            perror("munmap failed");
+            exit(0);
+        }
     }
 
     // unmap sub nodes
     for (int i = 0; i < sub_node_map_counter; i++) {
-        munmap(sub_node_maps[i], PAGE_SIZE);
+        if (munmap(sub_node_maps[i], PAGE_SIZE) == -1) {
+            perror("munmap failed");
+            exit(0);
+        }
     }
-    munmap(main_node_tracker, PAGE_SIZE);
-    munmap(sub_node_tracker, PAGE_SIZE);
+
+    if (munmap(main_node_tracker, PAGE_SIZE) == -1) {
+        perror("munmap failed");
+        exit(0);
+    }
+
+    if (munmap(sub_node_tracker, PAGE_SIZE) == -1) {
+        perror("munmap failed");
+        exit(0);
+    }
 }
 
 /*
@@ -168,8 +204,10 @@ user program wants Returns: MeMS Virtual p_addr (that is created by MeMS)
 */
 void* mems_malloc(size_t size) {
 
-// TODO
-// size = 0 edge case
+    if (size == 0) {
+        perror("mems_malloc size is 0");
+        return NULL;
+    }
 
     struct main_node* current_main_node = head_main->next;
     // traverseing through main nodes
@@ -217,6 +255,11 @@ void* mems_malloc(size_t size) {
 
     void* p_addr = mmap(NULL, num_of_pages * PAGE_SIZE, PROT_READ | PROT_WRITE,
                         MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+    if (p_addr == MAP_FAILED) {
+        perror("mmap failed");
+        exit(0);
+    }
 
     // make a new main_node
     struct main_node* new_main_node = add_main_node();
