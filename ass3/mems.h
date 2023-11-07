@@ -21,11 +21,11 @@ Use this macro where ever you need PAGE_SIZE.
 As PAGESIZE can differ system to system we should have flexibility to modify
 this macro to make the output of all system same and conduct a fair evaluation.
 */
-#define PAGE_SIZE 5000
+#define PAGE_SIZE 4096
 #define HOLE 0
 #define PROCESS 1
 #define START_VIRTUAL_ADDRESS 1000
-#define MAX_SIZE 100000
+// #define MAX_SIZE 100000
 
 struct main_node {
     int num_of_pages;
@@ -53,8 +53,8 @@ void* main_node_tracker;
 void* sub_node_tracker;
 void* current_main_node_map;
 void* current_sub_node_map;
-int main_node_map_counter = 0;
-int sub_node_map_counter = 0;
+// int main_node_map_counter = 0;
+// int sub_node_map_counter = 0;
 // void* main_node_maps[MAX_SIZE];
 // void* sub_node_maps[MAX_SIZE];
 
@@ -70,9 +70,9 @@ void init_free_list() {
     }
 
     // main_node_maps[main_node_map_counter] = main_node_tracker;
-    main_node_map_counter += 1;
+    // main_node_map_counter += 1;
     // sub_node_maps[sub_node_map_counter] = sub_node_tracker;
-    sub_node_map_counter += 1; 
+    // sub_node_map_counter += 1; 
     current_main_node_map = main_node_tracker;
     current_sub_node_map = sub_node_tracker;
 }
@@ -89,7 +89,7 @@ struct main_node* add_main_node() {
         }
 
         // main_node_maps[main_node_map_counter] = current_main_node_map;
-        main_node_map_counter += 1;
+        // main_node_map_counter += 1;
         main_node_tracker = current_main_node_map + sizeof(struct main_node);
         return (struct main_node*)current_main_node_map;
     // else use the current mmap page
@@ -109,7 +109,7 @@ struct sub_node* add_sub_node() {
         }
 
         // sub_node_maps[sub_node_map_counter] = current_sub_node_map;
-        sub_node_map_counter += 1;
+        // sub_node_map_counter += 1;
         sub_node_tracker = current_sub_node_map + sizeof(struct sub_node);
         return (struct sub_node*)current_sub_node_map;
     } else {
@@ -230,8 +230,7 @@ void* mems_malloc(size_t size) {
                     }
                     current_sub_node->next = new_sub_node;
                     current_sub_node->size = (int)size;
-                    current_sub_node->v_addr_end =
-                        (void*)(current_sub_node->v_addr_start + size - 1); 
+                    current_sub_node->v_addr_end = (void*)(current_sub_node->v_addr_start + size - 1); 
                 }
                 // if size is equal to required, no need to make new hole
                 current_sub_node->type = PROCESS;
@@ -298,7 +297,6 @@ void* mems_malloc(size_t size) {
         new_sub_node_hole->prev = new_sub_node;
         new_sub_node->next = new_sub_node_hole;
     }
-
     new_main_node->sub_head = new_sub_node;
     return new_sub_node->v_addr_start;
 }
@@ -322,16 +320,13 @@ void mems_print_stats() {
     int total_used_pages = 0;
     int total_unused_size = 0;
     int main_chain_length = 0;
-    int sub_chain_lengths[MAX_SIZE];
     while (current_main_node != head_main) {
         total_used_pages += current_main_node->num_of_pages;
-        int sub_chain_length = 0; 
         printf("MAIN[%lu:%lu]-> ", (uintptr_t)current_main_node->v_addr_start, (uintptr_t)current_main_node->v_addr_end);
         main_chain_length += 1;
         struct sub_node* current_sub_node = current_main_node->sub_head;
         int main_node_pages = current_main_node->num_of_pages;
         while (current_sub_node != NULL) {
-            sub_chain_length += 1;
             if (current_sub_node->type == HOLE) {
                 printf("H[%lu:%lu] <-> ", (uintptr_t)current_sub_node->v_addr_start, (uintptr_t)current_sub_node->v_addr_end);
                 total_unused_size += current_sub_node->size;
@@ -340,7 +335,6 @@ void mems_print_stats() {
             }
             current_sub_node = current_sub_node->next;
         }
-        sub_chain_lengths[main_chain_length - 1] = sub_chain_length;
         current_main_node = current_main_node->next;
         printf("NULL\n");
     }
@@ -348,8 +342,17 @@ void mems_print_stats() {
     printf("Total unused size: %d\n", total_unused_size);
     printf("Main chain length: %d\n", main_chain_length);
     printf("Sub chain length array: [");
-    for (int i = 0; i < main_chain_length; i++) {
-         printf("%d, ", sub_chain_lengths[i]);
+
+    current_main_node = head_main->next;
+    while (current_main_node != head_main) {
+        struct sub_node* current_sub_node = current_main_node->sub_head;
+        int sub_chain_length = 0;
+        while (current_sub_node != NULL) {
+            sub_chain_length += 1;
+            current_sub_node = current_sub_node->next;
+        }
+        printf("%d, ", sub_chain_length);
+        current_main_node = current_main_node->next;
     }
     printf("]\n");  
 }
@@ -424,6 +427,7 @@ void mems_free(void* v_ptr) {
         while (current_sub_node != NULL) {
             // if the v_ptr is in the sub_node
             // if (v_ptr >= current_sub_node->v_addr_start && v_ptr < current_sub_node->v_addr_end && current_sub_node->type == PROCESS) {
+            // if the v_ptr is the starting address of the sub_node
                 if (v_ptr == current_sub_node->v_addr_start && current_sub_node->type == PROCESS) {
                 // make the sub_node HOLE
                 current_sub_node->type = HOLE;
