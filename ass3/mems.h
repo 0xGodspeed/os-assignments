@@ -21,9 +21,10 @@ Use this macro where ever you need PAGE_SIZE.
 As PAGESIZE can differ system to system we should have flexibility to modify
 this macro to make the output of all system same and conduct a fair evaluation.
 */
-#define PAGE_SIZE 4096
+#define PAGE_SIZE 5000
 #define HOLE 0
 #define PROCESS 1
+#define START_VIRTUAL_ADDRESS 1000
 #define MAX_SIZE 100000
 
 struct main_node {
@@ -53,9 +54,9 @@ void* sub_node_tracker;
 void* current_main_node_map;
 void* current_sub_node_map;
 int main_node_map_counter = 0;
-void* main_node_maps[MAX_SIZE];
 int sub_node_map_counter = 0;
-void* sub_node_maps[MAX_SIZE];
+// void* main_node_maps[MAX_SIZE];
+// void* sub_node_maps[MAX_SIZE];
 
 void init_free_list() {
     main_node_tracker = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
@@ -68,9 +69,9 @@ void init_free_list() {
         exit(0);
     }
 
-    main_node_maps[main_node_map_counter] = main_node_tracker;
+    // main_node_maps[main_node_map_counter] = main_node_tracker;
     main_node_map_counter += 1;
-    sub_node_maps[sub_node_map_counter] = sub_node_tracker;
+    // sub_node_maps[sub_node_map_counter] = sub_node_tracker;
     sub_node_map_counter += 1; 
     current_main_node_map = main_node_tracker;
     current_sub_node_map = sub_node_tracker;
@@ -87,7 +88,7 @@ struct main_node* add_main_node() {
             perror("mmap failed");
         }
 
-        main_node_maps[main_node_map_counter] = current_main_node_map;
+        // main_node_maps[main_node_map_counter] = current_main_node_map;
         main_node_map_counter += 1;
         main_node_tracker = current_main_node_map + sizeof(struct main_node);
         return (struct main_node*)current_main_node_map;
@@ -107,7 +108,7 @@ struct sub_node* add_sub_node() {
             perror("mmap failed");
         }
 
-        sub_node_maps[sub_node_map_counter] = current_sub_node_map;
+        // sub_node_maps[sub_node_map_counter] = current_sub_node_map;
         sub_node_map_counter += 1;
         sub_node_tracker = current_sub_node_map + sizeof(struct sub_node);
         return (struct sub_node*)current_sub_node_map;
@@ -138,7 +139,7 @@ void mems_init() {
     head_main->next = head_main;
     head_main->prev = head_main;
     head_main->sub_head = NULL;
-    start_virtual_address = (void *)1000;
+    start_virtual_address = (void *)START_VIRTUAL_ADDRESS;
     head_main->v_addr_start = start_virtual_address;
     head_main->v_addr_end = start_virtual_address-1;
 }
@@ -154,41 +155,33 @@ void mems_finish() {
         struct main_node* temp = current_main_node;
         current_main_node = current_main_node->next;
         // unmap the pages allocated to the user
+        // printf("unmapping %lu\n", (uintptr_t)temp->v_addr_start);
         if (munmap(temp->p_addr, temp->num_of_pages * PAGE_SIZE) == -1) {
             perror("munmap failed");
-            exit(0);
+            // exit(0);
         }
 
         struct sub_node* current_sub_node = temp->sub_head;
         // cant do this as it unmaps all the nodes
         // munmap(temp, sizeof(struct main_node));
     }
+    head_main->next = head_main;
 
     // unmap main nodes
-    for (int i = 0; i < main_node_map_counter; i++) {
-        if (munmap(main_node_maps[i], PAGE_SIZE) == -1) {
-            perror("munmap failed");
-            exit(0);
-        }
-    }
+    // for (int i = 0; i < main_node_map_counter; i++) {
+    //     if (munmap(main_node_maps[i], PAGE_SIZE) == -1) {
+    //         perror("munmap failed");
+    //         exit(0);
+    //     }
+    // }
 
     // unmap sub nodes
-    for (int i = 0; i < sub_node_map_counter; i++) {
-        if (munmap(sub_node_maps[i], PAGE_SIZE) == -1) {
-            perror("munmap failed");
-            exit(0);
-        }
-    }
-
-    if (munmap(main_node_tracker, PAGE_SIZE) == -1) {
-        perror("munmap failed");
-        exit(0);
-    }
-
-    if (munmap(sub_node_tracker, PAGE_SIZE) == -1) {
-        perror("munmap failed");
-        exit(0);
-    }
+    // for (int i = 0; i < sub_node_map_counter; i++) {
+    //     if (munmap(sub_node_maps[i], PAGE_SIZE) == -1) {
+    //         perror("munmap failed");
+    //         exit(0);
+    //     }
+    // }
 }
 
 /*
@@ -320,6 +313,11 @@ used.
 should print the necessary information on STDOUT
 */
 void mems_print_stats() {
+    if (head_main->next == head_main) {
+        printf("No memory allocated\n");
+        return;
+    }
+
     struct main_node* current_main_node = head_main->next;
     int total_used_pages = 0;
     int total_unused_size = 0;
