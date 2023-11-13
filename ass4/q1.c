@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -22,12 +23,12 @@ int phil_bowl[5] = {-1, -1, -1, -1, -1};
 
 void thinking(int id) {
     printf("Philosopher %d is thinking\n", id);
-    sleep(rand() % 5);
+    usleep(rand() % 5000000);
 }
 
 void eating(int id) {
     printf("Philosopher %d is eating\n", id);
-    sleep(rand() % 5);
+    usleep(rand() % 5000000);
     printf("Philosopher %d finished eating\n", id);
 }
 
@@ -89,12 +90,12 @@ void put_forks_and_bowl(int id) {
     pthread_mutex_lock(&lock);
     forks[left_id] = AVAILABLE;
     printf("Philosopher %d put down fork %d\n", id, left_id);
-    pthread_cond_broadcast(&cond_fork[left_id]);
+    pthread_cond_signal(&cond_fork[left_id]);
     forks[right_id] = AVAILABLE;
     printf("Philosopher %d put down fork %d\n", id, right_id);
     bowls[phil_bowl[id]] = AVAILABLE;
     printf("Philosopher %d put down bowl %d\n", id, phil_bowl[id]);
-    pthread_cond_broadcast(&cond_fork[right_id]);
+    pthread_cond_signal(&cond_fork[right_id]);
     pthread_mutex_unlock(&lock);
 }
 
@@ -105,7 +106,7 @@ void philosopher(void *args) {
         get_forks_and_bowl(id);
         eating(id);
         put_forks_and_bowl(id);
-        sleep(rand() % 5);
+        usleep(rand() % 5000000);
     }
 }
 
