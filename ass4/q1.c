@@ -7,13 +7,18 @@
 void *phil_ids[5] = {(void *)0, (void *)1, (void *)2, (void *)3, (void *)4};
 
 pthread_mutex_t lock;
-pthread_cond_t cond[5];
+pthread_cond_t cond_fork[5];
+pthread_cond_t cond_bowl[2];
 pthread_t phils[5];
 
 #define NOT_AVAILABLE 0
 #define AVAILABLE 1
 
 int forks[5] = {AVAILABLE, AVAILABLE, AVAILABLE, AVAILABLE, AVAILABLE};
+int bowls[2] = {AVAILABLE, AVAILABLE};
+
+// to keep track of which philosopher has which bowl
+int phil_bowl[5] = {-1, -1, -1, -1, -1};
 
 void thinking(int id) {
     printf("Philosopher %d is thinking\n", id);
@@ -30,7 +35,7 @@ int left(int id) { return id; }
 
 int right(int id) { return (id + 1) % 5; }
 
-void get_forks(int id) {
+void get_forks_and_bowl(int id) {
     int left_id = left(id);
     int right_id = right(id);
     pthread_mutex_lock(&lock);
@@ -38,41 +43,58 @@ void get_forks(int id) {
     if (id == 4) {
         while (forks[left_id] == NOT_AVAILABLE) {
             printf("Philosopher %d is waiting for fork %d\n", id, left_id);
-            pthread_cond_wait(&cond[left_id], &lock);
+            pthread_cond_wait(&cond_fork[left_id], &lock);
         }
         printf("Philosopher %d got fork %d\n", id, left_id);
         while (forks[right_id] == NOT_AVAILABLE) {
             printf("Philosopher %d is waiting for fork %d\n", id, right_id);
-            pthread_cond_wait(&cond[right_id], &lock);
+            pthread_cond_wait(&cond_fork[right_id], &lock);
         }
         printf("Philosopher %d got fork %d\n", id, right_id);
     } else {
         while (forks[right_id] == NOT_AVAILABLE) {
             printf("Philosopher %d is waiting for fork %d\n", id, right_id);
-            pthread_cond_wait(&cond[right_id], &lock);
+            pthread_cond_wait(&cond_fork[right_id], &lock);
         }
         printf("Philosopher %d got fork %d\n", id, right_id);
         while (forks[left_id] == NOT_AVAILABLE) {
             printf("Philosopher %d is waiting for fork %d\n", id, left_id);
-            pthread_cond_wait(&cond[left_id], &lock);
+            pthread_cond_wait(&cond_fork[left_id], &lock);
         }
         printf("Philosopher %d got fork %d\n", id, left_id);
     }
-    forks[left_id] = NOT_AVAILABLE;
+    forks[left_id]  = NOT_AVAILABLE;
     forks[right_id] = NOT_AVAILABLE;
+    if (bowls[0] == NOT_AVAILABLE) {
+        if (bowls[1] == NOT_AVAILABLE) {
+            printf("Philosopher %d is waiting for bowl 1\n", id);
+            pthread_cond_wait(&cond_bowl[1], &lock);
+        }
+        else {
+            bowls[1] = NOT_AVAILABLE;
+            phil_bowl[id] = 1;
+            printf("Philosopher %d got bowl 1\n", id);
+        }
+    } else {
+        bowls[0] = NOT_AVAILABLE;
+        phil_bowl[id] = 0; 
+        printf("Philosopher %d got bowl 0\n", id);
+    }
     pthread_mutex_unlock(&lock);
 }
 
-void put_forks(int id) {
+void put_forks_and_bowl(int id) {
     int left_id = left(id);
     int right_id = right(id);
     pthread_mutex_lock(&lock);
     forks[left_id] = AVAILABLE;
     printf("Philosopher %d put down fork %d\n", id, left_id);
-    pthread_cond_broadcast(&cond[left_id]);
+    pthread_cond_broadcast(&cond_fork[left_id]);
     forks[right_id] = AVAILABLE;
     printf("Philosopher %d put down fork %d\n", id, right_id);
-    pthread_cond_broadcast(&cond[right_id]);
+    bowls[phil_bowl[id]] = AVAILABLE;
+    printf("Philosopher %d put down bowl %d\n", id, phil_bowl[id]);
+    pthread_cond_broadcast(&cond_fork[right_id]);
     pthread_mutex_unlock(&lock);
 }
 
@@ -80,9 +102,9 @@ void philosopher(void *args) {
     int id = *((int *)args);
     while (1) {
         thinking(id);
-        get_forks(id);
+        get_forks_and_bowl(id);
         eating(id);
-        put_forks(id);
+        put_forks_and_bowl(id);
         sleep(rand() % 5);
     }
 }
@@ -94,7 +116,7 @@ int main() {
     }
 
     for (int i = 0; i < 5; i++) {
-        if (pthread_cond_init(&cond[i], NULL) != 0) {
+        if (pthread_cond_init(&cond_fork[i], NULL) != 0) {
             printf("Cond init failed\n");
             return 1;
         }
@@ -114,7 +136,7 @@ int main() {
 
     pthread_mutex_destroy(&lock);
     for (int i = 0; i < 5; i++) {
-        pthread_cond_destroy(&cond[i]);
+        pthread_cond_destroy(&cond_fork[i]);
     }
     return 0;
 }
