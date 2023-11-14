@@ -10,10 +10,12 @@ void *phil_ids[5] = {(void *)0, (void *)1, (void *)2, (void *)3, (void *)4};
 pthread_mutex_t lock;
 pthread_cond_t cond_fork[5];
 pthread_cond_t cond_bowl[2];
+pthread_cond_t bowl_available;
 pthread_t phils[5];
 
 #define NOT_AVAILABLE 0
 #define AVAILABLE 1
+#define TIME 2 * 1000000
 
 int forks[5] = {AVAILABLE, AVAILABLE, AVAILABLE, AVAILABLE, AVAILABLE};
 int bowls[2] = {AVAILABLE, AVAILABLE};
@@ -23,12 +25,12 @@ int phil_bowl[5] = {-1, -1, -1, -1, -1};
 
 void thinking(int id) {
     printf("Philosopher %d is thinking\n", id);
-    usleep(rand() % 5000000);
+    usleep(random() % TIME);
 }
 
 void eating(int id) {
     printf("Philosopher %d is eating\n", id);
-    usleep(rand() % 5000000);
+    usleep(random() % TIME);
     printf("Philosopher %d finished eating\n", id);
 }
 
@@ -66,10 +68,31 @@ void get_forks_and_bowl(int id) {
     }
     forks[left_id]  = NOT_AVAILABLE;
     forks[right_id] = NOT_AVAILABLE;
+
+    // if (bowls[id % 2] == NOT_AVAILABLE) {
+    //     printf("Philosopher %d is waiting for bowl %d\n", id, id % 2);
+    //     pthread_cond_wait(&cond_bowl[id % 2], &lock);
+    // } else {
+    //     bowls[id % 2] = NOT_AVAILABLE;
+    //     phil_bowl[id] = id % 2;
+    //     printf("Philosopher %d got bowl %d\n", id, id % 2);
+    // }
+
     if (bowls[0] == NOT_AVAILABLE) {
         if (bowls[1] == NOT_AVAILABLE) {
-            printf("Philosopher %d is waiting for bowl 1\n", id);
-            pthread_cond_wait(&cond_bowl[1], &lock);
+            printf("Philosopher %d is waiting for a bowl\n", id);
+            // if both bowls are not available, wait for one of them to be available
+            pthread_cond_wait(&bowl_available, &lock);
+            if (bowls[0] == AVAILABLE) {
+                bowls[0] = NOT_AVAILABLE;
+                phil_bowl[id] = 0;
+                printf("Philosopher %d got bowl 0\n", id);
+            } else {
+                bowls[1] = NOT_AVAILABLE;
+                phil_bowl[id] = 1;
+                printf("Philosopher %d got bowl 1\n", id);
+            }
+            // pthread_cond_wait(&cond_bowl[1], &lock);
         }
         else {
             bowls[1] = NOT_AVAILABLE;
@@ -90,12 +113,15 @@ void put_forks_and_bowl(int id) {
     pthread_mutex_lock(&lock);
     forks[left_id] = AVAILABLE;
     printf("Philosopher %d put down fork %d\n", id, left_id);
-    pthread_cond_signal(&cond_fork[left_id]);
+    pthread_cond_broadcast(&cond_fork[left_id]);
     forks[right_id] = AVAILABLE;
     printf("Philosopher %d put down fork %d\n", id, right_id);
+    pthread_cond_broadcast(&cond_fork[right_id]);
     bowls[phil_bowl[id]] = AVAILABLE;
     printf("Philosopher %d put down bowl %d\n", id, phil_bowl[id]);
-    pthread_cond_signal(&cond_fork[right_id]);
+    phil_bowl[id] = -1;
+    pthread_cond_broadcast(&bowl_available);
+    // pthread_cond_broadcast(&cond_bowl[phil_bowl[id]]);
     pthread_mutex_unlock(&lock);
 }
 
@@ -106,6 +132,7 @@ void philosopher(void *args) {
         get_forks_and_bowl(id);
         eating(id);
         put_forks_and_bowl(id);
+        usleep(random() % TIME);
         usleep(rand() % 5000000);
     }
 }
@@ -122,6 +149,8 @@ int main() {
             return 1;
         }
     }
+
+    pthread_cond_init(&bowl_available, NULL);
 
     for (int i = 0; i < 5; i++) {
         if (pthread_create(&phils[i], NULL, (void *)philosopher,
