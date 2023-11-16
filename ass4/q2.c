@@ -15,6 +15,9 @@ sem_t ride;
 sem_t carLoaded, carUnloaded;
 sem_t boardMutex;
 
+int min(int a, int b) { return a < b ? a : b; }
+int max(int a, int b) { return a > b ? a : b; }
+
 void load() { usleep(random() % TIME); }
 
 void unload() { usleep(random() % TIME); }
@@ -65,7 +68,7 @@ void* car(void* args) {
     while (total_passengers > 0) {
         load();
         // let all passenger threads know that car is loaded
-        for (int i = 0; i < capacity; i++) {
+        for (int i = 0; i < min(total_passengers, capacity); i++) {
             sem_post(&carLoaded);
         }
         printf("Car is loaded.\n");
@@ -96,7 +99,7 @@ void* car(void* args) {
         unload();
 
         // let all passenger threads know that car is unloaded
-        for (int i = 0; i < capacity; i++) {
+        for (int i = 0; i < min(total_passengers, capacity); i++) {
             sem_post(&carUnloaded);
         }
         printf("Car is unloaded.\n");
@@ -112,6 +115,8 @@ void* car(void* args) {
 
         printf("Car is empty with %d passengers.\n", passengers_on_board);
         total_passengers -= capacity;
+        // if total_passengers goes below 0, then no passengers are left
+        printf("Total passengers left: %d\n", max(total_passengers, 0));
     }
     printf("All passengers have ridden the car.\n");
 }
