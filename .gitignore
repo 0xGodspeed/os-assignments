@@ -6,4 +6,5 @@ test.c
 tempCodeRunnerFile.c
 tempCodeRunnerFile.h
 tempCodeRunnerFile
-
+.gitignore
+.history/
