@@ -46,9 +46,9 @@ void* passenger(void* args) {
     // while (passengers_on_board < capacity) {
     sem_wait(&boardMutex);
     passengers_on_board++;
-    board(passenger_id);
     printf("Passenger %d is on board.\n", passenger_id);
     sem_post(&boardMutex);
+    board(passenger_id);
 
     sem_wait(&ride);
     printf("Passenger %d knows that ride is done.\n", passenger_id);
@@ -58,10 +58,10 @@ void* passenger(void* args) {
     printf("Passenger %d knows that car is unloaded.\n", passenger_id);
 
     sem_wait(&boardMutex);
-    offboard(passenger_id);
     printf("Passenger %d is off board.\n", passenger_id);
     passengers_on_board--;
     sem_post(&boardMutex);
+    offboard(passenger_id);
 }
 
 void* car(void* args) {
@@ -138,17 +138,25 @@ int main() {
     pthread_t carThread;
     int passenger_id[total_passengers];
     int car_id = 0;
-    pthread_create(&carThread, NULL, car, &car_id);
     for (int i = 0; i < total_passengers; i++) {
         passenger_id[i] = i;
+        // printf("Creating passenger %d\n", i);
         pthread_create(&passengers[i], NULL, passenger, &passenger_id[i]);
     }
+
+    pthread_create(&carThread, NULL, car, &car_id);
     for (int i = 0; i < total_passengers; i++) {
         pthread_join(passengers[i], NULL);
     }
+
     if (pthread_join(carThread, NULL) != 0) {
         printf("Thread join failed\n");
         return 1;
     }
+    sem_destroy(&ride);
+    sem_destroy(&carLoaded);
+    sem_destroy(&carUnloaded);
+    sem_destroy(&boardMutex);
+    
     return 0;
 }
