@@ -20,7 +20,7 @@
 # Q2 - Car and passengers
 
 ## Implementation details
-- the loop goes on till all passengers have been served.
+-- the loop goes on infinitely
 #### Globals
 - `capacity`: the number of passengers that can be loaded into the car at a time
 - `total_passengers`: the total number of passengers
@@ -35,5 +35,20 @@
 
   ![](q2_flow.png)
 
-# Q3 - Bridge crossing
+## How concurrency bugs are avoided
+- We use binary semaphores (mutexes) to ensure mutual exclusion when changing the number of passengers on board and handling critical sections.
+- We use semaphores to signal/wait for the car to be loaded, unloaded and for the ride to be completed. This ensures that the car is loaded/unloaded only when the passengers are ready and the ride is completed only when the car is loaded. This avoids any race conditions.
 
+# Q3 - Bridge crossing
+## Assumptions
+- In our solution, cars always begin crossing from the left side first unless there are no cars on the left side. 
+- Maximum possible number of cars cross the bridge at a time, alternating between both directions.
+
+## Implementation details
+- We use a `crossing_left` and `crossing_right` semaphore to wait for cars to cross the bridge. These semaphores are used to signal the cars that are waiting on the other side of the bridge.
+- We use a binary semaphore `mutex` to ensure mutual exclusion when changing the number of cars on the bridge and handling critical sections.
+- We keep a track of how many cars have crossed in the current direction and how many are remaninig and switching sides when necessary. This is done using `count_in_direction`, `remaining_right`, `remaining_left` variables.
+
+## How concurrency bugs are avoided
+- We use binary semaphores to ensure mutual exclusion in critical sections of the code.
+- Semaphores are used to make sure only cars from one direction cross at a given time and the cars in the opposite direction wait on a semaphore till then. 

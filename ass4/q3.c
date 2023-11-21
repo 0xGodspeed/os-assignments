@@ -56,13 +56,6 @@ void* car_left(void* args) {
     printf("Count in direction: %d\n", count_in_direction);
     printf("Remaining left: %d | Remaining right: %d\n", remaining_left, remaining_right);
     passing();
-    // if (count_in_direction == min(5, remaining_left)) {
-    //     printf("bruh");
-    //     current_direction = RIGHT;
-    //     count_in_direction = 0;
-    //     sem_post(&crossing_right);
-    // }
-    // sem_post(&mutex);
 }
 
 // right car thread
@@ -91,14 +84,6 @@ void* car_right(void* args) {
     printf("Remaining left: %d | Remaining right: %d\n", remaining_left,
            remaining_right);
     passing();
-    // sem_wait(&mutex);
-    // count_in_direction++;
-    // if (count_in_direction == min(5,f remaining_right)) {
-    //     current_direction = LEFT;
-    //     count_in_direction = 0;
-    // }
-    // sem_post(&mutex);
-    // sem_post(&crossing_left);
 }
 
 void init_semaphores() {
