@@ -139,4 +139,9 @@ int main() {
     for (int i = 0; i < left + right; i++) {
         pthread_join(cars[i], NULL);
     }
+
+    sem_destroy(&crossing_left);
+    sem_destroy(&crossing_right);
+    sem_destroy(&mutex);
+    return 0;
 }
