@@ -39,33 +39,35 @@ void offboard(int passenger_id) {
 
 void* passenger(void* args) {
     int passenger_id = *((int*)args);
-    printf("Passenger %d is waiting for car to be loaded.\n", passenger_id);
-    sem_wait(&carLoaded);
-    printf("Passenger %d knows that car is loaded.\n", passenger_id);
+    while (1) {
+        printf("Passenger %d is waiting for car to be loaded.\n", passenger_id);
+        sem_wait(&carLoaded);
+        printf("Passenger %d knows that car is loaded.\n", passenger_id);
 
-    // while (passengers_on_board < capacity) {
-    sem_wait(&boardMutex);
-    passengers_on_board++;
-    printf("Passenger %d is on board.\n", passenger_id);
-    sem_post(&boardMutex);
-    board(passenger_id);
+        // while (passengers_on_board < capacity) {
+        sem_wait(&boardMutex);
+        passengers_on_board++;
+        printf("Passenger %d is on board.\n", passenger_id);
+        sem_post(&boardMutex);
+        board(passenger_id);
 
-    sem_wait(&ride);
-    printf("Passenger %d knows that ride is done.\n", passenger_id);
-    // }
+        sem_wait(&ride);
+        printf("Passenger %d knows that ride is done.\n", passenger_id);
+        // }
 
-    sem_wait(&carUnloaded);
-    printf("Passenger %d knows that car is unloaded.\n", passenger_id);
+        sem_wait(&carUnloaded);
+        printf("Passenger %d knows that car is unloaded.\n", passenger_id);
 
-    sem_wait(&boardMutex);
-    printf("Passenger %d is off board.\n", passenger_id);
-    passengers_on_board--;
-    sem_post(&boardMutex);
-    offboard(passenger_id);
+        sem_wait(&boardMutex);
+        printf("Passenger %d is off board.\n", passenger_id);
+        passengers_on_board--;
+        sem_post(&boardMutex);
+        offboard(passenger_id);
+    }
 }
 
 void* car(void* args) {
-    while (total_passengers > 0) {
+    while (1) {
         load();
         // let all passenger threads know that car is loaded
         for (int i = 0; i < min(total_passengers, capacity); i++) {
@@ -114,11 +116,11 @@ void* car(void* args) {
         }
 
         printf("Car is empty with %d passengers.\n", passengers_on_board);
-        total_passengers -= capacity;
+        // total_passengers -= capacity;
         // if total_passengers goes below 0, then no passengers are left
-        printf("Total passengers left: %d\n", max(total_passengers, 0));
+        // printf("Total passengers left: %d\n", max(total_passengers, 0));
     }
-    printf("All passengers have ridden the car.\n");
+    // printf("All passengers have ridden the car.\n");
 }
 
 void init() {
@@ -157,6 +159,6 @@ int main() {
     sem_destroy(&carLoaded);
     sem_destroy(&carUnloaded);
     sem_destroy(&boardMutex);
-    
+
     return 0;
 }
